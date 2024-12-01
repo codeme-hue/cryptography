@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Encryption Tool: SHA-256, AES, RSA</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/forge/0.10.0/forge.min.js"></script>
+    <style>
+      body {
+        font-family: "Arial", sans-serif;
+        background-color: #f0f4f8;
+        color: #333;
+        padding: 20px;
+      }
+      h1,
+      h2 {
+        text-align: center;
+        color: #007bff;
+      }
+      .container {
+        max-width: 600px;
+        margin: 20px auto;
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      }
+      input[type="text"] {
+        width: calc(100% - 24px);
+        padding: 10px;
+        margin: 10px 0;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        font-size: 16px;
+      }
+      button {
+        background-color: #007bff;
+        color: white;
+        padding: 10px 15px;
+        margin: 5px 0;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        width: 100%;
+        font-size: 16px;
+      }
+      button:hover {
+        background-color: #0056b3;
+      }
+      .result {
+        background-color: #e9ecef;
+        padding: 10px;
+        border-radius: 4px;
+        max-height: 100px;
+        overflow: auto;
+        word-wrap: break-word;
+        white-space: pre-wrap;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>CryptoJS & RSA Encryption Tool</h1>
+
+    <div class="container">
+      <h2>SHA-256 Hashing</h2>
+      <input type="text" id="shaInput" placeholder="Enter text to hash" />
+      <input type="text" id="shaValidate" placeholder="Enter text to validate" />
+      <button onclick="hashSHA()">Hash</button>
+      <button onclick="validateSHA256()">Validate</button>
+      <p><strong>Hash:</strong></p>
+      <div class="result" id="shaResult"></div>
+    </div>
+
+    <div class="container">
+      <h2>AES Encryption</h2>
+      <input type="text" id="aesInput" placeholder="Enter text to encrypt" />
+      <button onclick="encryptAES()">Encrypt</button>
+      <button onclick="decryptAES()">Decrypt</button>
+      <p><strong>Encryption Key:</strong></p>
+      <div class="result" id="aesKey"></div>
+      <p><strong>Encrypted:</strong></p>
+      <div class="result" id="aesEncrypted"></div>
+      <p><strong>Decrypted:</strong></p>
+      <div class="result" id="aesDecrypted"></div>
+    </div>
+
+    <div class="container">
+      <h2>RSA Encryption</h2>
+      <input type="text" id="rsaInput" placeholder="Enter text to encrypt" />
+      <button onclick="encryptRSA()">Encrypt</button>
+      <button onclick="decryptRSA()">Decrypt</button>
+      <p><strong>Public Key:</strong></p>
+      <div class="result" id="publicKey"></div>
+      <p><strong>Encrypted:</strong></p>
+      <div class="result" id="rsaEncrypted"></div>
+      <p><strong>Decrypted:</strong></p>
+      <div class="result" id="rsaDecrypted"></div>
+    </div>
+
+    <script>
+      // SHA-256 Hashing
+      let hash;
+      function hashSHA() {
+        const input = document.getElementById("shaInput").value;
+        hash = CryptoJS.SHA256(input).toString(CryptoJS.enc.Hex);
+        document.getElementById("shaResult").innerText = hash;
+      }
+
+      function validateSHA256() {
+        // Menghitung hash SHA-256 dari inputText
+        const inputText = document.getElementById("shaValidate").value;
+        const computedHash = CryptoJS.SHA256(inputText).toString(
+          CryptoJS.enc.Hex
+        );
+
+        // Membandingkan hash yang dihitung dengan hash yang diharapkan
+        if (computedHash === hash) {
+          alert("Hash validasi berhasil! Hash cocok.");
+        } else {
+          alert("Hash tidak valid! Hash tidak cocok.");
+        }
+      }
+
+      let aesKeypair;
+      function generateAESKey() {
+        const randomKey = CryptoJS.lib.WordArray.random(16); // 128-bit key (16 bytes)
+        const keyHex = randomKey.toString(CryptoJS.enc.Hex);
+        document.getElementById("aesKey").innerText = keyHex;
+        return keyHex;
+      }
+
+      // AES Encryption
+      function encryptAES() {
+        const input = document.getElementById("aesInput").value;
+        aesKeypair = generateAESKey();
+        if (!aesKeypair) {
+          alert("Please provide an encryption key!");
+          return;
+        }
+        const encrypted = CryptoJS.AES.encrypt(input, aesKeypair).toString();
+        document.getElementById("aesEncrypted").innerText = encrypted;
+      }
+
+      function decryptAES() {
+        const encryptedText = document.getElementById("aesEncrypted").innerText;
+        if (!aesKeypair) {
+          alert("Please provide the encryption key!");
+          return;
+        }
+        const decrypted = CryptoJS.AES.decrypt(encryptedText, aesKeypair);
+        const originalText = decrypted.toString(CryptoJS.enc.Utf8);
+        document.getElementById("aesDecrypted").innerText =
+          originalText || "Invalid decryption key!";
+      }
+
+      // RSA Encryption with Forge.js
+      let rsaKeypair;
+      function generateRSAKeys() {
+        rsaKeypair = forge.pki.rsa.generateKeyPair({ bits: 2048 });
+        const publicKeyPem = forge.pki.publicKeyToPem(rsaKeypair.publicKey);
+        document.getElementById("publicKey").innerText = publicKeyPem;
+      }
+
+      function encryptRSA() {
+        generateRSAKeys();
+        if (!rsaKeypair) {
+          alert("Please generate RSA keys first!");
+          return;
+        }
+        const input = document.getElementById("rsaInput").value;
+        const encrypted = rsaKeypair.publicKey.encrypt(input, "RSA-OAEP");
+        document.getElementById("rsaEncrypted").innerText =
+          forge.util.encode64(encrypted);
+      }
+
+      function decryptRSA() {
+        if (!rsaKeypair) {
+          alert("Please generate RSA keys first!");
+          return;
+        }
+        const encryptedText = document.getElementById("rsaEncrypted").innerText;
+        const encryptedBytes = forge.util.decode64(encryptedText);
+        const decrypted = rsaKeypair.privateKey.decrypt(
+          encryptedBytes,
+          "RSA-OAEP"
+        );
+        document.getElementById("rsaDecrypted").innerText = decrypted;
+      }
+    </script>
+  </body>
+</html>
